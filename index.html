@@ -5,208 +5,107 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Kleepa — AI Clipping Agent</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
-      --blue: #2563eb;
-      --blue-dark: #1d4ed8;
-      --blue-light: #eff6ff;
-      --blue-mid: #bfdbfe;
-      --green: #16a34a;
-      --green-light: #dcfce7;
-      --red: #dc2626;
-      --red-light: #fef2f2;
-      --yellow: #d97706;
-      --yellow-light: #fef3c7;
-      --text: #0f172a;
-      --text-muted: #64748b;
-      --text-faint: #94a3b8;
-      --border: #e2e8f0;
-      --border-mid: #cbd5e1;
-      --bg: #f8fafc;
-      --white: #ffffff;
+      --blue: #2563eb; --blue-dark: #1d4ed8; --blue-light: #eff6ff; --blue-mid: #bfdbfe;
+      --green: #16a34a; --green-light: #dcfce7;
+      --red: #dc2626; --red-light: #fef2f2;
+      --yellow: #d97706; --yellow-light: #fef3c7;
+      --text: #0f172a; --text-muted: #64748b; --text-faint: #94a3b8;
+      --border: #e2e8f0; --border-mid: #cbd5e1;
+      --bg: #f8fafc; --white: #ffffff;
       --sidebar-w: 224px;
     }
-
     html, body { height: 100%; }
     body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); display: flex; min-height: 100vh; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
 
-    /* ─────────────────────────────────────────
-       SIDEBAR
-    ───────────────────────────────────────── */
-    #sidebar {
-      width: var(--sidebar-w); background: var(--white); border-right: 1px solid var(--border);
-      display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; z-index: 50;
-    }
-    .sidebar-logo {
-      display: flex; align-items: center; gap: 10px; padding: 18px 18px 14px;
-      border-bottom: 1px solid var(--border);
-    }
-    .logo-icon {
-      width: 32px; height: 32px; background: var(--blue); border-radius: 8px;
-      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    }
+    /* ── SIDEBAR ── */
+    #sidebar { width: var(--sidebar-w); background: var(--white); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; z-index: 50; }
+    .sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 18px 18px 14px; border-bottom: 1px solid var(--border); }
+    .logo-icon { width: 32px; height: 32px; background: var(--blue); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
     .logo-text { font-family: 'Playfair Display', serif; font-size: 17px; font-weight: 800; color: var(--text); }
-
-    nav { flex: 1; padding: 10px 8px; display: flex; flex-direction: column; gap: 1px; overflow-y: auto; }
-
-    .nav-section-label {
-      font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
-      color: var(--text-faint); padding: 10px 10px 4px;
-    }
-
-    .nav-btn {
-      display: flex; align-items: center; gap: 9px; padding: 9px 10px; border: none; background: none;
-      border-radius: 8px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 13px;
-      font-weight: 500; color: var(--text-muted); width: 100%; text-align: left; transition: all 0.13s;
-    }
+    nav { flex: 1; padding: 10px 8px; display: flex; flex-direction: column; gap: 1px; }
+    .nav-btn { display: flex; align-items: center; gap: 9px; padding: 9px 10px; border: none; background: none; border-radius: 8px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; color: var(--text-muted); width: 100%; text-align: left; transition: all 0.13s; }
     .nav-btn:hover { background: var(--bg); color: var(--text); }
     .nav-btn.active { background: var(--blue-light); color: var(--blue); font-weight: 700; }
     .nav-icon { width: 16px; height: 16px; flex-shrink: 0; }
     .nav-label { flex: 1; }
-    .nav-count {
-      font-size: 10px; font-weight: 700; background: var(--blue); color: white;
-      padding: 1px 6px; border-radius: 20px; min-width: 18px; text-align: center;
-    }
+    .nav-count { font-size: 10px; font-weight: 700; background: var(--blue); color: white; padding: 1px 6px; border-radius: 20px; min-width: 18px; text-align: center; }
     .nav-count.red { background: var(--red); }
-
     .sidebar-bottom { padding: 12px; border-top: 1px solid var(--border); }
-    .sidebar-agent-status {
-      display: flex; align-items: center; gap: 8px; padding: 9px 12px;
-      background: var(--green-light); border-radius: 8px; font-size: 12px;
-      color: var(--green); font-weight: 600; margin-bottom: 10px;
-    }
-    .agent-dot {
-      width: 7px; height: 7px; background: var(--green); border-radius: 50%;
-      animation: pulse 2s ease-in-out infinite; flex-shrink: 0;
-    }
-    @keyframes pulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.5; transform:scale(0.8); } }
-
-    .add-channel-btn {
-      width: 100%; padding: 10px; background: var(--blue); color: white; border: none;
-      border-radius: 9px; font-size: 13px; font-weight: 700; cursor: pointer;
-      font-family: 'DM Sans', sans-serif; display: flex; align-items: center; justify-content: center;
-      gap: 7px; transition: background 0.18s;
-    }
+    .sidebar-agent-status { display: flex; align-items: center; gap: 8px; padding: 9px 12px; background: var(--green-light); border-radius: 8px; font-size: 12px; color: var(--green); font-weight: 600; margin-bottom: 10px; }
+    .agent-dot { width: 7px; height: 7px; background: var(--green); border-radius: 50%; animation: pulse 2s ease-in-out infinite; flex-shrink: 0; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(0.8)} }
+    .add-channel-btn { width: 100%; padding: 10px; background: var(--blue); color: white; border: none; border-radius: 9px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; display: flex; align-items: center; justify-content: center; gap: 7px; transition: background 0.18s; }
     .add-channel-btn:hover { background: var(--blue-dark); }
 
-    /* ─────────────────────────────────────────
-       MAIN
-    ───────────────────────────────────────── */
+    /* ── MAIN ── */
     #main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
-
-    .topbar {
-      background: var(--white); border-bottom: 1px solid var(--border); padding: 0 24px;
-      height: 58px; display: flex; align-items: center; gap: 14px;
-      position: sticky; top: 0; z-index: 40;
-    }
+    .topbar { background: var(--white); border-bottom: 1px solid var(--border); padding: 0 24px; height: 58px; display: flex; align-items: center; gap: 14px; position: sticky; top: 0; z-index: 40; }
     #hamburger-btn { display: none; background: none; border: none; cursor: pointer; padding: 4px; color: var(--text-muted); }
     .topbar-info { display: flex; flex-direction: column; }
     .topbar-title { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 700; color: var(--text); line-height: 1.2; }
     .topbar-date { font-size: 11px; color: var(--text-faint); margin-top: 1px; }
     .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
-    .status-pill {
-      display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--green);
-      font-weight: 600; background: var(--green-light); padding: 4px 10px; border-radius: 20px;
-    }
+    .status-pill { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--green); font-weight: 600; background: var(--green-light); padding: 4px 10px; border-radius: 20px; }
     .status-dot { width: 6px; height: 6px; background: var(--green); border-radius: 50%; flex-shrink: 0; }
-    .avatar {
-      width: 32px; height: 32px; background: var(--blue); border-radius: 50%;
-      display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 13px;
-    }
+    .avatar { width: 32px; height: 32px; background: var(--blue); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 13px; cursor: pointer; position: relative; }
+    .avatar-menu { position: absolute; top: 40px; right: 0; background: var(--white); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); padding: 6px; min-width: 160px; display: none; z-index: 100; }
+    .avatar-menu.open { display: block; }
+    .avatar-menu-item { padding: 8px 12px; font-size: 13px; color: var(--text); border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+    .avatar-menu-item:hover { background: var(--bg); }
+    .avatar-menu-item.danger { color: var(--red); }
 
-    /* ─────────────────────────────────────────
-       PAGES
-    ───────────────────────────────────────── */
-    .page { display: none; padding: 24px; flex: 1; max-width: 1200px; }
+    /* ── PAGES ── */
+    .page { display: none; padding: 24px; flex: 1; max-width: 1100px; }
     .page.active { display: block; animation: fadeIn 0.15s ease; }
-    @keyframes fadeIn { from { opacity:0; transform:translateY(3px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)} }
 
-    /* ─────────────────────────────────────────
-       STATS
-    ───────────────────────────────────────── */
+    /* ── STATS ── */
     .stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 24px; }
-    .stat-card {
-      background: var(--white); border: 1px solid var(--border); border-radius: 12px;
-      padding: 18px 20px; display: flex; flex-direction: column; gap: 4px;
-    }
-    .stat-icon-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-    .stat-icon-wrap {
-      width: 36px; height: 36px; border-radius: 9px; display: flex; align-items: center; justify-content: center;
-    }
+    .stat-card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; }
+    .stat-icon-wrap { width: 36px; height: 36px; border-radius: 9px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
     .stat-icon-wrap.blue { background: var(--blue-light); color: var(--blue); }
     .stat-icon-wrap.green { background: var(--green-light); color: var(--green); }
     .stat-icon-wrap.yellow { background: var(--yellow-light); color: var(--yellow); }
-    .stat-icon-wrap.red { background: var(--red-light); color: var(--red); }
-    .stat-label { font-size: 11.5px; color: var(--text-muted); font-weight: 600; }
+    .stat-label { font-size: 11.5px; color: var(--text-muted); font-weight: 600; margin-bottom: 4px; }
     .stat-value { font-size: 26px; font-weight: 800; color: var(--text); font-family: 'Playfair Display', serif; line-height: 1; }
-    .stat-sub { font-size: 11px; color: var(--text-faint); margin-top: 2px; }
+    .stat-sub { font-size: 11px; color: var(--text-faint); margin-top: 3px; }
 
-    /* ─────────────────────────────────────────
-       CARDS
-    ───────────────────────────────────────── */
+    /* ── CARDS ── */
     .card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 18px; }
     .card-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--border); }
     .card-title { font-size: 13.5px; font-weight: 700; color: var(--text); }
     .card-action { font-size: 12px; color: var(--blue); font-weight: 600; background: none; border: none; cursor: pointer; font-family: inherit; padding: 4px 8px; border-radius: 6px; }
     .card-action:hover { background: var(--blue-light); }
 
-    /* ─────────────────────────────────────────
-       EMPTY STATES
-    ───────────────────────────────────────── */
-    .empty-state {
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      padding: 56px 24px; text-align: center;
-    }
-    .empty-icon-wrap {
-      width: 64px; height: 64px; background: var(--bg); border: 1px solid var(--border);
-      border-radius: 16px; display: flex; align-items: center; justify-content: center;
-      margin-bottom: 16px; color: var(--text-faint);
-    }
+    /* ── EMPTY STATES ── */
+    .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 56px 24px; text-align: center; }
+    .empty-icon-wrap { width: 64px; height: 64px; background: var(--bg); border: 1px solid var(--border); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; color: var(--text-faint); }
     .empty-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
     .empty-sub { font-size: 13px; color: var(--text-muted); max-width: 280px; line-height: 1.6; margin-bottom: 20px; }
 
-    /* ─────────────────────────────────────────
-       CLIP ROWS
-    ───────────────────────────────────────── */
+    /* ── CLIP ROWS ── */
     .clip-row { display: flex; align-items: center; gap: 14px; padding: 13px 18px; border-bottom: 1px solid var(--border); transition: background 0.13s; }
     .clip-row:last-child { border-bottom: none; }
     .clip-row:hover { background: var(--bg); }
-
-    .clip-thumb {
-      width: 50px; height: 50px; border-radius: 9px; flex-shrink: 0;
-      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
-      display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden;
-    }
-    .clip-thumb-inner {
-      width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
-      background: linear-gradient(135deg, #1e293b, #0f172a);
-    }
-    .clip-play-icon { color: rgba(255,255,255,0.7); }
-
+    .clip-thumb { width: 50px; height: 50px; border-radius: 9px; flex-shrink: 0; background: linear-gradient(135deg, #1e293b, #0f172a); display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.5); }
     .clip-info { flex: 1; min-width: 0; }
     .clip-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .clip-meta { font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
     .clip-channel { color: var(--blue); font-weight: 600; }
     .clip-dot { width: 3px; height: 3px; background: var(--border-mid); border-radius: 50%; }
-    .clip-duration {
-      font-size: 10.5px; font-weight: 600; background: var(--bg); border: 1px solid var(--border);
-      padding: 1px 7px; border-radius: 20px; color: var(--text-muted);
-    }
+    .clip-duration { font-size: 10.5px; font-weight: 600; background: var(--bg); border: 1px solid var(--border); padding: 1px 7px; border-radius: 20px; color: var(--text-muted); }
     .clip-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
-    /* ─────────────────────────────────────────
-       CHANNEL ROWS
-    ───────────────────────────────────────── */
+    /* ── CHANNEL ROWS ── */
     .channel-row { display: flex; align-items: center; gap: 14px; padding: 14px 18px; border-bottom: 1px solid var(--border); transition: background 0.13s; }
     .channel-row:last-child { border-bottom: none; }
     .channel-row:hover { background: var(--bg); }
-    .channel-avatar {
-      width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 800; font-size: 15px; color: white; background: var(--blue);
-    }
+    .channel-avatar { width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; color: white; background: var(--blue); }
     .channel-info { flex: 1; min-width: 0; }
     .channel-name { font-size: 13.5px; font-weight: 700; color: var(--text); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .channel-meta { font-size: 11.5px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
@@ -214,50 +113,7 @@
     .ch-status.active { color: var(--green); }
     .ch-status.paused { color: var(--yellow); }
 
-    /* ─────────────────────────────────────────
-       BADGES
-    ───────────────────────────────────────── */
-    .badge { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 20px; white-space: nowrap; }
-    .badge-ready { background: var(--green-light); color: var(--green); }
-    .badge-processing { background: var(--blue-light); color: var(--blue); }
-    .badge-new { background: var(--yellow-light); color: var(--yellow); }
-    .badge-failed { background: var(--red-light); color: var(--red); }
-
-    /* ─────────────────────────────────────────
-       BUTTONS
-    ───────────────────────────────────────── */
-    .btn-primary {
-      padding: 8px 16px; background: var(--blue); color: white; border: none; border-radius: 8px;
-      font-size: 13px; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif;
-      transition: background 0.18s; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px;
-    }
-    .btn-primary:hover { background: var(--blue-dark); }
-    .btn-outline {
-      padding: 8px 16px; background: var(--white); color: var(--text); border: 1.5px solid var(--border);
-      border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;
-      font-family: 'DM Sans', sans-serif; transition: all 0.18s; white-space: nowrap;
-      display: inline-flex; align-items: center; gap: 6px;
-    }
-    .btn-outline:hover { border-color: var(--blue); color: var(--blue); }
-    .btn-ghost {
-      padding: 7px 12px; background: transparent; color: var(--text-muted); border: none;
-      border-radius: 7px; font-size: 12px; font-weight: 600; cursor: pointer;
-      font-family: 'DM Sans', sans-serif; transition: all 0.13s;
-      display: inline-flex; align-items: center; gap: 5px;
-    }
-    .btn-ghost:hover { background: var(--bg); color: var(--text); }
-    .btn-sm { padding: 6px 12px; font-size: 12px; }
-    .btn-icon {
-      width: 32px; height: 32px; background: var(--bg); border: 1px solid var(--border);
-      border-radius: 7px; display: flex; align-items: center; justify-content: center;
-      cursor: pointer; transition: all 0.13s; color: var(--text-muted); flex-shrink: 0;
-    }
-    .btn-icon:hover { background: var(--blue-light); border-color: var(--blue); color: var(--blue); }
-    .btn-icon.danger:hover { background: var(--red-light); border-color: var(--red); color: var(--red); }
-
-    /* ─────────────────────────────────────────
-       ACTIVITY
-    ───────────────────────────────────────── */
+    /* ── ACTIVITY ── */
     .activity-item { display: flex; align-items: flex-start; gap: 12px; padding: 13px 18px; border-bottom: 1px solid var(--border); transition: background 0.13s; }
     .activity-item:last-child { border-bottom: none; }
     .activity-item:hover { background: var(--bg); }
@@ -270,9 +126,25 @@
     .activity-text { font-size: 13px; color: var(--text); line-height: 1.5; }
     .activity-time { font-size: 11px; color: var(--text-faint); margin-top: 3px; }
 
-    /* ─────────────────────────────────────────
-       SETTINGS
-    ───────────────────────────────────────── */
+    /* ── BADGES ── */
+    .badge { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 20px; white-space: nowrap; }
+    .badge-ready { background: var(--green-light); color: var(--green); }
+    .badge-processing { background: var(--blue-light); color: var(--blue); }
+    .badge-new { background: var(--yellow-light); color: var(--yellow); }
+    .badge-failed { background: var(--red-light); color: var(--red); }
+
+    /* ── BUTTONS ── */
+    .btn-primary { padding: 8px 16px; background: var(--blue); color: white; border: none; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: background 0.18s; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-primary:hover { background: var(--blue-dark); }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-outline { padding: 8px 16px; background: var(--white); color: var(--text); border: 1.5px solid var(--border); border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.18s; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-outline:hover { border-color: var(--blue); color: var(--blue); }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+    .btn-icon { width: 32px; height: 32px; background: var(--bg); border: 1px solid var(--border); border-radius: 7px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.13s; color: var(--text-muted); flex-shrink: 0; }
+    .btn-icon:hover { background: var(--blue-light); border-color: var(--blue); color: var(--blue); }
+    .btn-icon.danger:hover { background: var(--red-light); border-color: var(--red); color: var(--red); }
+
+    /* ── SETTINGS ── */
     .settings-section { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 22px; margin-bottom: 16px; }
     .settings-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
     .settings-sub { font-size: 12.5px; color: var(--text-muted); margin-bottom: 18px; line-height: 1.5; }
@@ -280,35 +152,22 @@
     .setting-row:last-child { border-bottom: none; padding-bottom: 0; }
     .setting-label { font-size: 13px; font-weight: 600; color: var(--text); }
     .setting-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; line-height: 1.4; }
-    .form-select {
-      padding: 8px 12px; border: 1.5px solid var(--border); border-radius: 8px;
-      font-size: 13px; font-family: 'DM Sans', sans-serif; outline: none; color: var(--text);
-      background: var(--white); cursor: pointer; transition: border-color 0.15s;
-    }
+    .form-select { padding: 8px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 13px; font-family: 'DM Sans', sans-serif; outline: none; color: var(--text); background: var(--white); cursor: pointer; }
     .form-select:focus { border-color: var(--blue); }
-    .form-input {
-      padding: 9px 12px; border: 1.5px solid var(--border); border-radius: 8px;
-      font-size: 13px; font-family: 'DM Sans', sans-serif; outline: none; color: var(--text);
-      background: var(--white); transition: border-color 0.15s, box-shadow 0.15s;
-    }
-    .form-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,99,235,0.08); }
-
+    .form-input { padding: 9px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 13px; font-family: 'DM Sans', sans-serif; outline: none; color: var(--text); background: var(--white); transition: border-color 0.15s; }
+    .form-input:focus { border-color: var(--blue); }
     .toggle { width: 42px; height: 23px; background: var(--border-mid); border-radius: 12px; position: relative; cursor: pointer; transition: background 0.2s; border: none; flex-shrink: 0; }
     .toggle.on { background: var(--blue); }
     .toggle-knob { width: 17px; height: 17px; background: white; border-radius: 50%; position: absolute; top: 3px; left: 3px; transition: transform 0.2s; box-shadow: 0 1px 4px rgba(0,0,0,0.15); }
     .toggle.on .toggle-knob { transform: translateX(19px); }
 
-    /* ─────────────────────────────────────────
-       PAGE HEADERS
-    ───────────────────────────────────────── */
+    /* ── PAGE HEADERS ── */
     .page-header { margin-bottom: 20px; }
     .page-header h2 { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 800; color: var(--text); }
     .page-header p { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
     .page-header-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
 
-    /* ─────────────────────────────────────────
-       MODAL
-    ───────────────────────────────────────── */
+    /* ── MODAL ── */
     #add-channel-modal { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.45); z-index: 9999; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(2px); }
     #add-channel-modal.open { display: flex; }
     .modal-box { background: var(--white); border-radius: 16px; padding: 28px; width: 100%; max-width: 440px; box-shadow: 0 20px 60px rgba(0,0,0,0.18); animation: fadeIn 0.18s ease; }
@@ -321,12 +180,17 @@
     .modal-input::placeholder { color: var(--text-faint); }
     .modal-select { width: 100%; padding: 11px 13px; border: 1.5px solid var(--border); border-radius: 9px; font-size: 13.5px; font-family: 'DM Sans', sans-serif; outline: none; color: var(--text); background: var(--white); cursor: pointer; }
     .modal-actions { display: flex; gap: 10px; margin-top: 22px; }
-    .modal-error { font-size: 12px; color: var(--red); margin-top: 5px; display: none; }
+    .modal-error { font-size: 12px; color: var(--red); margin-top: 5px; background: var(--red-light); padding: 8px 12px; border-radius: 7px; display: none; }
     .modal-error.visible { display: block; }
 
-    /* ─────────────────────────────────────────
-       MOBILE DRAWER
-    ───────────────────────────────────────── */
+    /* ── TOAST ── */
+    #toast { position: fixed; bottom: 24px; right: 24px; background: var(--text); color: white; padding: 12px 18px; border-radius: 10px; font-size: 13px; font-weight: 500; z-index: 99999; display: none; animation: fadeIn 0.2s ease; box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+
+    /* ── SPINNER ── */
+    .spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── MOBILE DRAWER ── */
     #drawer-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 60; }
     #drawer-overlay.open { display: block; }
     #mobile-drawer { position: fixed; top: 0; left: 0; height: 100vh; width: 260px; background: var(--white); z-index: 70; transform: translateX(-100%); transition: transform 0.24s ease; display: flex; flex-direction: column; border-right: 1px solid var(--border); }
@@ -339,9 +203,7 @@
     .drawer-btn.active { background: var(--blue-light); color: var(--blue); font-weight: 700; }
     .drawer-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
 
-    /* ─────────────────────────────────────────
-       AUTH SCREENS
-    ───────────────────────────────────────── */
+    /* ── AUTH SCREENS ── */
     .auth-screen { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
     .auth-screen.active { display: flex; }
     .auth-box { background: var(--white); border: 1px solid var(--border); border-radius: 18px; padding: 36px 32px; width: 100%; max-width: 400px; box-shadow: 0 8px 40px rgba(0,0,0,0.07); animation: fadeIn 0.2s ease; }
@@ -353,39 +215,30 @@
     .auth-input { width: 100%; padding: 11px 13px; border: 1.5px solid var(--border); border-radius: 9px; font-size: 14px; font-family: 'DM Sans', sans-serif; color: var(--text); background: var(--white); outline: none; transition: border-color 0.15s, box-shadow 0.15s; }
     .auth-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,99,235,0.08); }
     .auth-input::placeholder { color: var(--text-faint); }
-    .auth-error { font-size: 12px; color: var(--red); margin-top: 5px; display: none; background: var(--red-light); padding: 8px 12px; border-radius: 7px; }
+    .auth-error { font-size: 12px; color: var(--red); margin-top: 5px; background: var(--red-light); padding: 8px 12px; border-radius: 7px; display: none; }
     .auth-error.visible { display: block; }
-    .auth-btn { width: 100%; padding: 12px; background: var(--blue); color: white; border: none; border-radius: 9px; font-size: 14px; font-weight: 700; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: background 0.18s; margin-top: 6px; }
+    .auth-btn { width: 100%; padding: 12px; background: var(--blue); color: white; border: none; border-radius: 9px; font-size: 14px; font-weight: 700; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: background 0.18s; margin-top: 6px; display: flex; align-items: center; justify-content: center; gap: 8px; }
     .auth-btn:hover { background: var(--blue-dark); }
+    .auth-btn:disabled { opacity: 0.6; cursor: not-allowed; }
     .auth-switch { text-align: center; font-size: 13px; color: var(--text-muted); margin-top: 18px; }
     .auth-switch a { color: var(--blue); font-weight: 700; text-decoration: none; cursor: pointer; }
-    .auth-switch a:hover { text-decoration: underline; }
     .auth-forgot { text-align: right; margin-top: -6px; margin-bottom: 14px; }
     .auth-forgot a { font-size: 12px; color: var(--blue); text-decoration: none; cursor: pointer; font-weight: 600; }
-    .auth-divider { height: 1px; background: var(--border); margin: 20px 0; }
     .confirmed-icon { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; }
 
-    /* ─────────────────────────────────────────
-       RESPONSIVE
-    ───────────────────────────────────────── */
+    /* ── RESPONSIVE ── */
     @media (max-width: 1024px) { .stats-grid { grid-template-columns: repeat(2,1fr); } }
     @media (max-width: 767px) {
-      #sidebar { display: none; }
-      #main { margin-left: 0; }
-      #hamburger-btn { display: flex; }
-      .stats-grid { grid-template-columns: repeat(2,1fr); gap: 10px; }
-      .page { padding: 14px; }
+      #sidebar { display: none; } #main { margin-left: 0; } #hamburger-btn { display: flex; }
+      .stats-grid { grid-template-columns: repeat(2,1fr); gap: 10px; } .page { padding: 14px; }
       .clip-actions { flex-wrap: wrap; }
     }
-    @media (max-width: 480px) {
-      .stats-grid { grid-template-columns: 1fr 1fr; }
-      .auth-box { padding: 26px 18px; }
-    }
+    @media (max-width: 480px) { .stats-grid { grid-template-columns: 1fr 1fr; } .auth-box { padding: 26px 18px; } }
   </style>
 </head>
 <body>
 
-<!-- ══════════ AUTH: LOGIN ══════════ -->
+<!-- ── AUTH: LOGIN ── -->
 <div class="auth-screen active" id="auth-login">
   <div class="auth-box">
     <div class="auth-logo">
@@ -401,15 +254,15 @@
     <div class="auth-form-group">
       <label class="auth-label">Password</label>
       <input class="auth-input" type="password" id="login-password" placeholder="••••••••" autocomplete="current-password">
-      <div class="auth-forgot"><a>Forgot password?</a></div>
+      <div class="auth-forgot"><a onclick="handleForgotPassword()">Forgot password?</a></div>
     </div>
-    <div class="auth-error" id="login-error">Incorrect email or password. Please try again.</div>
-    <button class="auth-btn" onclick="handleLogin()">Log in</button>
+    <div class="auth-error" id="login-error"></div>
+    <button class="auth-btn" id="login-btn" onclick="handleLogin()">Log in</button>
     <div class="auth-switch">Don't have an account? <a onclick="showAuth('signup')">Sign up free</a></div>
   </div>
 </div>
 
-<!-- ══════════ AUTH: SIGN UP ══════════ -->
+<!-- ── AUTH: SIGN UP ── -->
 <div class="auth-screen" id="auth-signup">
   <div class="auth-box">
     <div class="auth-logo">
@@ -430,13 +283,13 @@
       <label class="auth-label">Confirm Password</label>
       <input class="auth-input" type="password" id="signup-confirm" placeholder="Repeat your password" autocomplete="new-password">
     </div>
-    <div class="auth-error" id="signup-error">Passwords don't match.</div>
-    <button class="auth-btn" onclick="handleSignup()">Create account</button>
+    <div class="auth-error" id="signup-error"></div>
+    <button class="auth-btn" id="signup-btn" onclick="handleSignup()">Create account</button>
     <div class="auth-switch">Already have an account? <a onclick="showAuth('login')">Log in</a></div>
   </div>
 </div>
 
-<!-- ══════════ AUTH: CHECK EMAIL ══════════ -->
+<!-- ── AUTH: CHECK EMAIL ── -->
 <div class="auth-screen" id="auth-check-email">
   <div class="auth-box" style="text-align:center;">
     <div class="confirmed-icon" style="background:#dbeafe;">
@@ -444,23 +297,23 @@
     </div>
     <div class="auth-heading" style="font-size:19px;">Check your email</div>
     <p style="font-size:13px;color:var(--text-muted);margin-top:8px;margin-bottom:22px;line-height:1.6;">We sent a confirmation link to <strong id="confirm-email-display" style="color:var(--text)"></strong>. Click it to activate your account.</p>
-    <button class="auth-btn" onclick="showAuth('login')">Back to login</button>
+    <button class="auth-btn" onclick="showAuth('login')" style="max-width:200px;margin:0 auto;">Back to login</button>
   </div>
 </div>
 
-<!-- ══════════ AUTH: CONFIRMED ══════════ -->
+<!-- ── AUTH: CONFIRMED ── -->
 <div class="auth-screen" id="auth-confirmed">
   <div class="auth-box" style="text-align:center;">
     <div class="confirmed-icon" style="background:var(--green-light);">
       <svg width="26" height="26" fill="none" stroke="#16a34a" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
     </div>
     <div class="auth-heading" style="font-size:19px;">You're confirmed!</div>
-    <p style="font-size:13px;color:var(--text-muted);margin-top:8px;margin-bottom:22px;line-height:1.6;">Your account is ready. Log in to start monitoring channels and generating clips automatically.</p>
-    <button class="auth-btn" onclick="showAuth('login')">Log in to Kleepa</button>
+    <p style="font-size:13px;color:var(--text-muted);margin-top:8px;margin-bottom:22px;line-height:1.6;">Your account is ready. Log in to start monitoring channels and generating clips.</p>
+    <button class="auth-btn" onclick="showAuth('login')" style="max-width:200px;margin:0 auto;">Log in to Kleepa</button>
   </div>
 </div>
 
-<!-- ══════════ SIDEBAR ══════════ -->
+<!-- ── SIDEBAR ── -->
 <div id="sidebar">
   <div class="sidebar-logo">
     <div class="logo-icon"><svg width="16" height="16" fill="none" stroke="white" stroke-width="2.5" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
@@ -474,10 +327,12 @@
     <button class="nav-btn" onclick="navigate('clips',this)">
       <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
       <span class="nav-label">Clips</span>
+      <span class="nav-count red" id="clips-count" style="display:none"></span>
     </button>
     <button class="nav-btn" onclick="navigate('channels',this)">
       <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
       <span class="nav-label">Channels</span>
+      <span class="nav-count" id="channels-count" style="display:none"></span>
     </button>
     <button class="nav-btn" onclick="navigate('activity',this)">
       <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
@@ -489,10 +344,7 @@
     </button>
   </nav>
   <div class="sidebar-bottom">
-    <div class="sidebar-agent-status">
-      <span class="agent-dot"></span>
-      Agent running
-    </div>
+    <div class="sidebar-agent-status"><span class="agent-dot"></span>Agent running</div>
     <button class="add-channel-btn" onclick="openAddChannel()">
       <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       Add Channel
@@ -500,7 +352,7 @@
   </div>
 </div>
 
-<!-- ══════════ MAIN ══════════ -->
+<!-- ── MAIN ── -->
 <div id="main">
   <div class="topbar">
     <button id="hamburger-btn" onclick="openDrawer()">
@@ -512,7 +364,17 @@
     </div>
     <div class="topbar-right">
       <div class="status-pill"><div class="status-dot"></div>Monitoring</div>
-      <div class="avatar" id="user-avatar">—</div>
+      <div style="position:relative;">
+        <div class="avatar" id="user-avatar" onclick="toggleAvatarMenu()">—</div>
+        <div class="avatar-menu" id="avatar-menu">
+          <div class="avatar-menu-item" id="avatar-email" style="color:var(--text-muted);font-size:12px;cursor:default;"></div>
+          <div style="height:1px;background:var(--border);margin:4px 0;"></div>
+          <div class="avatar-menu-item danger" onclick="handleLogout()">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Log out
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -520,246 +382,115 @@
   <div class="page active" id="page-dashboard">
     <div class="stats-grid">
       <div class="stat-card">
-        <div class="stat-icon-row">
-          <div class="stat-icon-wrap blue">
-            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
-          </div>
-        </div>
+        <div class="stat-icon-wrap blue"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div>
         <div class="stat-label">Total Clips</div>
         <div class="stat-value" id="stat-clips">0</div>
         <div class="stat-sub">Generated so far</div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon-row">
-          <div class="stat-icon-wrap green">
-            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
-          </div>
-        </div>
+        <div class="stat-icon-wrap green"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg></div>
         <div class="stat-label">Channels</div>
         <div class="stat-value" id="stat-channels">0</div>
         <div class="stat-sub">Being monitored</div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon-row">
-          <div class="stat-icon-wrap yellow">
-            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          </div>
-        </div>
+        <div class="stat-icon-wrap yellow"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>
         <div class="stat-label">Ready to Download</div>
         <div class="stat-value" id="stat-ready">0</div>
         <div class="stat-sub">Clips awaiting you</div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon-row">
-          <div class="stat-icon-wrap blue" style="background:#f0fdf4;color:#16a34a;">
-            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-          </div>
-        </div>
+        <div class="stat-icon-wrap blue" style="background:#f0fdf4;color:#16a34a;"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
         <div class="stat-label">Videos Processed</div>
         <div class="stat-value" id="stat-videos">0</div>
         <div class="stat-sub">All time</div>
       </div>
     </div>
-
-    <!-- Recent Clips -->
     <div class="card">
       <div class="card-header">
         <span class="card-title">Recent Clips</span>
         <button class="card-action" onclick="navigate('clips',document.querySelectorAll('.nav-btn')[1])">View all →</button>
       </div>
-      <div id="dashboard-clips-empty" class="empty-state">
-        <div class="empty-icon-wrap">
-          <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
-        </div>
-        <div class="empty-title">No clips yet</div>
-        <div class="empty-sub">Add a YouTube channel and Kleepa will automatically generate clips from new videos.</div>
-        <button class="btn-primary btn-sm" onclick="openAddChannel()">
-          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Add Your First Channel
-        </button>
-      </div>
+      <div id="dashboard-clips-list"></div>
     </div>
   </div>
 
   <!-- ══ CLIPS ══ -->
   <div class="page" id="page-clips">
     <div class="page-header-row">
-      <div class="page-header" style="margin-bottom:0">
-        <h2>Generated Clips</h2>
-        <p>Download clips and post them directly to YouTube, TikTok, or Reels</p>
-      </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-        <select class="form-select" style="font-size:12.5px;">
-          <option>All Channels</option>
-        </select>
-        <button class="btn-outline btn-sm">
-          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Download All
-        </button>
-      </div>
+      <div class="page-header" style="margin-bottom:0"><h2>Generated Clips</h2><p>Download and post directly to YouTube, TikTok or Reels</p></div>
+      <button class="btn-outline btn-sm" onclick="loadClips()">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.75"/></svg>
+        Refresh
+      </button>
     </div>
-    <div class="card">
-      <div class="empty-state">
-        <div class="empty-icon-wrap">
-          <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
-        </div>
-        <div class="empty-title">No clips generated yet</div>
-        <div class="empty-sub">Once you add a channel and a new video is uploaded, Kleepa will automatically find the best moments and cut them for you.</div>
-        <button class="btn-primary btn-sm" onclick="openAddChannel()">
-          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Add a Channel
-        </button>
-      </div>
-    </div>
+    <div class="card"><div id="clips-list"></div></div>
   </div>
 
   <!-- ══ CHANNELS ══ -->
   <div class="page" id="page-channels">
     <div class="page-header-row">
-      <div class="page-header" style="margin-bottom:0">
-        <h2>Monitored Channels</h2>
-        <p>Kleepa polls these channels every 10–15 minutes for new uploads</p>
-      </div>
+      <div class="page-header" style="margin-bottom:0"><h2>Monitored Channels</h2><p>Kleepa polls these every 10–15 minutes for new uploads</p></div>
       <button class="btn-primary btn-sm" onclick="openAddChannel()">
         <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Add Channel
       </button>
     </div>
-    <div class="card">
-      <div class="empty-state">
-        <div class="empty-icon-wrap">
-          <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
-        </div>
-        <div class="empty-title">No channels added yet</div>
-        <div class="empty-sub">Paste any YouTube channel URL. Kleepa will watch it 24/7 and clip new videos automatically.</div>
-        <button class="btn-primary btn-sm" onclick="openAddChannel()">
-          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Add Your First Channel
-        </button>
-      </div>
-    </div>
+    <div class="card"><div id="channels-list"></div></div>
   </div>
 
   <!-- ══ ACTIVITY ══ -->
   <div class="page" id="page-activity">
-    <div class="page-header">
-      <h2>Activity</h2>
-      <p>A live log of everything Kleepa Agent has done</p>
-    </div>
-    <div class="card">
-      <div class="empty-state">
-        <div class="empty-icon-wrap">
-          <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-        </div>
-        <div class="empty-title">No activity yet</div>
-        <div class="empty-sub">Once the agent starts monitoring channels, every action — detections, downloads, transcriptions, and clips — will appear here.</div>
-      </div>
-    </div>
+    <div class="page-header"><h2>Activity</h2><p>A live log of everything Kleepa Agent has done</p></div>
+    <div class="card"><div id="activity-list"></div></div>
   </div>
 
   <!-- ══ SETTINGS ══ -->
   <div class="page" id="page-settings">
-    <div class="page-header">
-      <h2>Settings</h2>
-      <p>Customize how Kleepa generates and delivers your clips</p>
-    </div>
-
+    <div class="page-header"><h2>Settings</h2><p>Customize how Kleepa generates and delivers your clips</p></div>
     <div class="settings-section">
       <div class="settings-title">Clipping</div>
       <div class="settings-sub">Control how clips are generated from new videos</div>
       <div class="setting-row">
-        <div>
-          <div class="setting-label">Clips per video</div>
-          <div class="setting-desc">Maximum number of clips generated per upload</div>
-        </div>
-        <select class="form-select">
-          <option>3 clips</option>
-          <option selected>5 clips</option>
-          <option>10 clips</option>
-        </select>
+        <div><div class="setting-label">Clips per video</div><div class="setting-desc">Maximum clips generated per upload</div></div>
+        <select class="form-select"><option>3 clips</option><option selected>5 clips</option><option>10 clips</option></select>
       </div>
       <div class="setting-row">
-        <div>
-          <div class="setting-label">Clip length</div>
-          <div class="setting-desc">Target duration for each generated clip</div>
-        </div>
-        <select class="form-select">
-          <option>30 – 60s</option>
-          <option selected>60 – 90s</option>
-          <option>90 – 120s</option>
-        </select>
+        <div><div class="setting-label">Clip length</div><div class="setting-desc">Target duration for each clip</div></div>
+        <select class="form-select"><option>30 – 60s</option><option selected>60 – 90s</option><option>90 – 120s</option></select>
       </div>
       <div class="setting-row">
-        <div>
-          <div class="setting-label">Auto-clip on upload</div>
-          <div class="setting-desc">Automatically clip when a new video is detected</div>
-        </div>
+        <div><div class="setting-label">Auto-clip on upload</div><div class="setting-desc">Clip automatically when a new video is detected</div></div>
         <button class="toggle on" onclick="this.classList.toggle('on')"><div class="toggle-knob"></div></button>
       </div>
       <div class="setting-row">
-        <div>
-          <div class="setting-label">Skip YouTube Shorts</div>
-          <div class="setting-desc">Ignore videos under 60 seconds</div>
-        </div>
+        <div><div class="setting-label">Skip YouTube Shorts</div><div class="setting-desc">Ignore videos under 60 seconds</div></div>
         <button class="toggle on" onclick="this.classList.toggle('on')"><div class="toggle-knob"></div></button>
       </div>
     </div>
-
-    <div class="settings-section">
-      <div class="settings-title">AI Preferences</div>
-      <div class="settings-sub">How the agent decides which moments are worth clipping</div>
-      <div class="setting-row">
-        <div>
-          <div class="setting-label">Clip style</div>
-          <div class="setting-desc">What type of moments to prioritize</div>
-        </div>
-        <select class="form-select">
-          <option selected>Most Engaging</option>
-          <option>Controversial Takes</option>
-          <option>Funny Moments</option>
-          <option>Key Insights</option>
-        </select>
-      </div>
-    </div>
-
     <div class="settings-section">
       <div class="settings-title">Notifications</div>
       <div class="settings-sub">How you want to be notified when clips are ready</div>
       <div class="setting-row">
-        <div>
-          <div class="setting-label">Email notifications</div>
-          <div class="setting-desc">Get an email when new clips are ready to download</div>
-        </div>
+        <div><div class="setting-label">Email notifications</div><div class="setting-desc">Get an email when clips are ready</div></div>
         <button class="toggle on" onclick="this.classList.toggle('on')"><div class="toggle-knob"></div></button>
       </div>
       <div class="setting-row">
-        <div>
-          <div class="setting-label">Browser push notifications</div>
-          <div class="setting-desc">Instant push when clips finish processing</div>
-        </div>
-        <button class="toggle on" onclick="this.classList.toggle('on')"><div class="toggle-knob"></div></button>
-      </div>
-      <div class="setting-row">
-        <div>
-          <div class="setting-label">Notification email</div>
-          <div class="setting-desc">Where to send clip-ready emails</div>
-        </div>
-        <input class="form-input" type="email" placeholder="you@example.com" style="width:220px;">
+        <div><div class="setting-label">Notification email</div><div class="setting-desc">Where to send clip-ready emails</div></div>
+        <input class="form-input" type="email" placeholder="you@example.com" style="width:220px;" id="settings-email">
       </div>
     </div>
-
     <div style="display:flex;justify-content:flex-end;margin-top:4px;">
-      <button class="btn-primary">Save settings</button>
+      <button class="btn-primary" onclick="showToast('Settings saved ✓')">Save settings</button>
     </div>
   </div>
+</div>
 
-</div><!-- /#main -->
-
-<!-- ══════════ ADD CHANNEL MODAL ══════════ -->
+<!-- ── ADD CHANNEL MODAL ── -->
 <div id="add-channel-modal">
   <div class="modal-box" onclick="event.stopPropagation()">
     <div class="modal-title">Add a Channel</div>
-    <div class="modal-sub">Paste a YouTube channel URL. Kleepa will monitor it around the clock and clip new videos automatically.</div>
+    <div class="modal-sub">Paste a YouTube channel URL. Kleepa will monitor it and clip new videos automatically.</div>
     <div class="form-group">
       <label class="form-label">YouTube Channel URL</label>
       <input class="modal-input" id="modal-url-input" type="url" placeholder="https://youtube.com/@channelname">
@@ -767,24 +498,15 @@
     </div>
     <div class="form-group">
       <label class="form-label">Clips per video</label>
-      <select class="modal-select">
-        <option>3 clips</option>
-        <option selected>5 clips</option>
-        <option>10 clips</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Clip style</label>
-      <select class="modal-select">
-        <option selected>Most Engaging Moments</option>
-        <option>Controversial Takes</option>
-        <option>Funny Moments</option>
-        <option>Key Insights Only</option>
+      <select class="modal-select" id="modal-clips-per-video">
+        <option value="3">3 clips</option>
+        <option value="5" selected>5 clips</option>
+        <option value="10">10 clips</option>
       </select>
     </div>
     <div class="modal-actions">
       <button class="btn-outline" style="flex:1;" onclick="closeAddChannel()">Cancel</button>
-      <button class="btn-primary" style="flex:2;" onclick="submitChannel()">
+      <button class="btn-primary" style="flex:2;" id="add-channel-btn" onclick="submitChannel()">
         <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
         Start Monitoring
       </button>
@@ -792,7 +514,7 @@
   </div>
 </div>
 
-<!-- ══════════ MOBILE DRAWER ══════════ -->
+<!-- ── MOBILE DRAWER ── -->
 <div id="drawer-overlay" onclick="closeDrawer()"></div>
 <div id="mobile-drawer">
   <div class="drawer-header">
@@ -800,48 +522,356 @@
       <div class="logo-icon" style="width:28px;height:28px;border-radius:6px;"><svg width="13" height="13" fill="none" stroke="white" stroke-width="2.5" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
       <span style="font-family:'Playfair Display',serif;font-size:15px;font-weight:800;color:var(--text);">Kleepa</span>
     </div>
-    <button class="drawer-close" onclick="closeDrawer()">
-      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
+    <button class="drawer-close" onclick="closeDrawer()"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
   </div>
   <div class="drawer-nav">
-    <button class="drawer-btn active" onclick="drawerNav('dashboard',this)">
-      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-      Dashboard
-    </button>
-    <button class="drawer-btn" onclick="drawerNav('clips',this)">
-      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
-      Clips
-    </button>
-    <button class="drawer-btn" onclick="drawerNav('channels',this)">
-      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
-      Channels
-    </button>
-    <button class="drawer-btn" onclick="drawerNav('activity',this)">
-      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-      Activity
-    </button>
-    <button class="drawer-btn" onclick="drawerNav('settings',this)">
-      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-      Settings
-    </button>
+    <button class="drawer-btn active" onclick="drawerNav('dashboard',this)"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</button>
+    <button class="drawer-btn" onclick="drawerNav('clips',this)"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>Clips</button>
+    <button class="drawer-btn" onclick="drawerNav('channels',this)"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>Channels</button>
+    <button class="drawer-btn" onclick="drawerNav('activity',this)"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Activity</button>
+    <button class="drawer-btn" onclick="drawerNav('settings',this)"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Settings</button>
   </div>
-  <div style="padding:12px;">
-    <button class="add-channel-btn" onclick="closeDrawer();openAddChannel()">+ Add Channel</button>
-  </div>
+  <div style="padding:12px;"><button class="add-channel-btn" onclick="closeDrawer();openAddChannel()">+ Add Channel</button></div>
 </div>
 
+<!-- ── TOAST ── -->
+<div id="toast"></div>
+
 <script>
+  // ─────────────────────────────────────────
+  // CONFIG — update these two values
+  // ─────────────────────────────────────────
+  const SUPABASE_URL = 'https://qpdpivlhtohdfzvscjxw.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFwZHBpdmxodG9oZGZ6dnNjanh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4NjU4MjEsImV4cCI6MjA5MDQ0MTgyMX0.TTMRbTLPrDaYmFh_rFR5ZhvoWNxGmcf3YJzP9DGjKVk'; // ← replace this
+  const API_URL = 'https://kleepa-backend.onrender.com'; // ← replace with your Render URL
+
+  // ─────────────────────────────────────────
+  // INIT SUPABASE
+  // ─────────────────────────────────────────
+  const { createClient } = supabase;
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  let currentUser = null;
+
+  // ─────────────────────────────────────────
+  // AUTH STATE
+  // ─────────────────────────────────────────
+  sb.auth.onAuthStateChange((event, session) => {
+    if (session?.user) {
+      currentUser = session.user;
+      enterApp();
+    } else {
+      currentUser = null;
+      showAuth('login');
+    }
+  });
+
+  function enterApp() {
+    document.querySelectorAll('.auth-screen').forEach(s => s.classList.remove('active'));
+    const email = currentUser.email || '';
+    const initial = email.charAt(0).toUpperCase() || '?';
+    document.getElementById('user-avatar').textContent = initial;
+    document.getElementById('avatar-email').textContent = email;
+    if (document.getElementById('settings-email')) {
+      document.getElementById('settings-email').value = email;
+    }
+    loadDashboard();
+  }
+
+  // ─────────────────────────────────────────
+  // AUTH HANDLERS
+  // ─────────────────────────────────────────
+  function showAuth(screen) {
+    document.querySelectorAll('.auth-screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('auth-' + screen)?.classList.add('active');
+  }
+
+  async function handleLogin() {
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    const error = document.getElementById('login-error');
+    const btn = document.getElementById('login-btn');
+
+    if (!email || !password) {
+      error.textContent = 'Please enter your email and password.';
+      error.classList.add('visible'); return;
+    }
+    error.classList.remove('visible');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div> Logging in...';
+
+    const { error: err } = await sb.auth.signInWithPassword({ email, password });
+    btn.disabled = false;
+    btn.innerHTML = 'Log in';
+
+    if (err) {
+      error.textContent = err.message;
+      error.classList.add('visible');
+    }
+  }
+
+  async function handleSignup() {
+    const email = document.getElementById('signup-email').value.trim();
+    const password = document.getElementById('signup-password').value;
+    const confirm = document.getElementById('signup-confirm').value;
+    const error = document.getElementById('signup-error');
+    const btn = document.getElementById('signup-btn');
+
+    if (!email || !password) { error.textContent = 'Please fill in all fields.'; error.classList.add('visible'); return; }
+    if (password.length < 8) { error.textContent = 'Password must be at least 8 characters.'; error.classList.add('visible'); return; }
+    if (password !== confirm) { error.textContent = "Passwords don't match."; error.classList.add('visible'); return; }
+
+    error.classList.remove('visible');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div> Creating account...';
+
+    const { error: err } = await sb.auth.signUp({ email, password });
+    btn.disabled = false;
+    btn.innerHTML = 'Create account';
+
+    if (err) {
+      error.textContent = err.message;
+      error.classList.add('visible');
+    } else {
+      document.getElementById('confirm-email-display').textContent = email;
+      showAuth('check-email');
+    }
+  }
+
+  async function handleForgotPassword() {
+    const email = document.getElementById('login-email').value.trim();
+    if (!email) { showToast('Enter your email first'); return; }
+    await sb.auth.resetPasswordForEmail(email);
+    showToast('Password reset email sent');
+  }
+
+  async function handleLogout() {
+    await sb.auth.signOut();
+    toggleAvatarMenu();
+  }
+
+  function toggleAvatarMenu() {
+    document.getElementById('avatar-menu').classList.toggle('open');
+  }
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.avatar') && !e.target.closest('.avatar-menu')) {
+      document.getElementById('avatar-menu').classList.remove('open');
+    }
+  });
+
+  // ─────────────────────────────────────────
+  // API CALLS
+  // ─────────────────────────────────────────
+  async function apiFetch(path, options = {}) {
+    const { data: { session } } = await sb.auth.getSession();
+    const token = session?.access_token || '';
+    const res = await fetch(API_URL + path, {
+      ...options,
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`, ...(options.headers || {}) }
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  }
+
+  // ─────────────────────────────────────────
+  // LOAD DATA
+  // ─────────────────────────────────────────
+  async function loadDashboard() {
+    await Promise.all([loadClips(), loadChannels(), loadActivity()]);
+  }
+
+  async function loadClips() {
+    if (!currentUser) return;
+    const list = document.getElementById('clips-list');
+    const dashList = document.getElementById('dashboard-clips-list');
+    try {
+      const data = await apiFetch(`/api/clips/?user_id=${currentUser.id}`);
+      const clips = data.clips || [];
+
+      // Update stats
+      document.getElementById('stat-clips').textContent = clips.length;
+      const ready = clips.filter(c => !c.downloaded).length;
+      document.getElementById('stat-ready').textContent = ready;
+
+      // Update nav badge
+      const badge = document.getElementById('clips-count');
+      if (ready > 0) { badge.textContent = ready; badge.style.display = 'inline'; }
+      else { badge.style.display = 'none'; }
+
+      // Render clips page
+      if (list) list.innerHTML = clips.length ? clips.map(clipHTML).join('') : emptyState('clip');
+
+      // Render dashboard recent (max 3)
+      if (dashList) dashList.innerHTML = clips.length
+        ? clips.slice(0,3).map(clipHTML).join('')
+        : emptyState('clip');
+
+    } catch(e) {
+      if (list) list.innerHTML = emptyState('clip');
+      if (dashList) dashList.innerHTML = emptyState('clip');
+    }
+  }
+
+  async function loadChannels() {
+    if (!currentUser) return;
+    const list = document.getElementById('channels-list');
+    try {
+      const data = await apiFetch(`/api/channels/?user_id=${currentUser.id}`);
+      const channels = data.channels || [];
+
+      document.getElementById('stat-channels').textContent = channels.length;
+      const badge = document.getElementById('channels-count');
+      if (channels.length > 0) { badge.textContent = channels.length; badge.style.display = 'inline'; }
+      else { badge.style.display = 'none'; }
+
+      if (list) list.innerHTML = channels.length ? channels.map(channelHTML).join('') : emptyState('channel');
+    } catch(e) {
+      if (list) list.innerHTML = emptyState('channel');
+    }
+  }
+
+  async function loadActivity() {
+    if (!currentUser) return;
+    // Activity comes from the clips/channels data — show recent events
+    const list = document.getElementById('activity-list');
+    if (list) list.innerHTML = emptyState('activity');
+  }
+
+  // ─────────────────────────────────────────
+  // HTML BUILDERS
+  // ─────────────────────────────────────────
+  function clipHTML(clip) {
+    const dur = clip.duration ? `${Math.floor(clip.duration/60)}:${String(Math.round(clip.duration%60)).padStart(2,'0')}` : '—';
+    const badge = clip.downloaded
+      ? '<span class="badge badge-processing">Downloaded</span>'
+      : '<span class="badge badge-ready">Ready</span>';
+    const btn = clip.downloaded
+      ? `<button class="btn-outline btn-sm" onclick="downloadClip('${clip.id}')">Re-download</button>`
+      : `<button class="btn-primary btn-sm" onclick="downloadClip('${clip.id}')"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download</button>`;
+    return `
+      <div class="clip-row">
+        <div class="clip-thumb"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
+        <div class="clip-info">
+          <div class="clip-title">${clip.title || 'Untitled Clip'}</div>
+          <div class="clip-meta"><span class="clip-duration">${dur}</span>${clip.score ? `<span class="clip-dot"></span><span>Score: ${clip.score}</span>` : ''}</div>
+        </div>
+        <div class="clip-actions">${badge}${btn}</div>
+      </div>`;
+  }
+
+  function channelHTML(ch) {
+    const initial = (ch.channel_name || ch.youtube_url || '?').charAt(0).toUpperCase();
+    const status = ch.is_active
+      ? `<div class="ch-status active"><div class="status-dot"></div>Monitoring</div>`
+      : `<div class="ch-status paused">⏸ Paused</div>`;
+    const toggleBtn = ch.is_active
+      ? `<button class="btn-icon" title="Pause" onclick="toggleChannel('${ch.id}', false)"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg></button>`
+      : `<button class="btn-icon" title="Resume" onclick="toggleChannel('${ch.id}', true)"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>`;
+    return `
+      <div class="channel-row">
+        <div class="channel-avatar">${initial}</div>
+        <div class="channel-info">
+          <div class="channel-name">${ch.channel_name || ch.youtube_url}</div>
+          <div class="channel-meta"><span>${ch.youtube_url}</span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          ${status}${toggleBtn}
+          <button class="btn-icon danger" title="Remove" onclick="deleteChannel('${ch.id}')"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg></button>
+        </div>
+      </div>`;
+  }
+
+  function emptyState(type) {
+    const configs = {
+      clip: { icon: '<polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/>', title: 'No clips yet', sub: 'Add a channel and Kleepa will automatically clip new videos.' },
+      channel: { icon: '<circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/>', title: 'No channels added', sub: 'Paste any YouTube channel URL to start monitoring.' },
+      activity: { icon: '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>', title: 'No activity yet', sub: 'Activity will appear here once the agent starts working.' },
+    };
+    const c = configs[type] || configs.clip;
+    return `<div class="empty-state">
+      <div class="empty-icon-wrap"><svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">${c.icon}</svg></div>
+      <div class="empty-title">${c.title}</div>
+      <div class="empty-sub">${c.sub}</div>
+      <button class="btn-primary btn-sm" onclick="openAddChannel()"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add a Channel</button>
+    </div>`;
+  }
+
+  // ─────────────────────────────────────────
+  // ACTIONS
+  // ─────────────────────────────────────────
+  async function submitChannel() {
+    const url = document.getElementById('modal-url-input').value.trim();
+    const clips = document.getElementById('modal-clips-per-video').value;
+    const error = document.getElementById('modal-url-error');
+    const btn = document.getElementById('add-channel-btn');
+
+    if (!url || !url.includes('youtube.com')) { error.classList.add('visible'); return; }
+    error.classList.remove('visible');
+
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div> Adding...';
+
+    try {
+      await apiFetch('/api/channels/', {
+        method: 'POST',
+        body: JSON.stringify({ youtube_url: url, clips_per_video: parseInt(clips), user_id: currentUser.id })
+      });
+      closeAddChannel();
+      showToast('Channel added — agent is watching 👁');
+      await loadChannels();
+    } catch(e) {
+      error.textContent = 'Failed to add channel. Try again.';
+      error.classList.add('visible');
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg> Start Monitoring';
+  }
+
+  async function toggleChannel(id, active) {
+    try {
+      await apiFetch(`/api/channels/${id}`, { method: 'PATCH', body: JSON.stringify({ is_active: active }) });
+      showToast(active ? 'Channel resumed' : 'Channel paused');
+      await loadChannels();
+    } catch(e) { showToast('Error updating channel'); }
+  }
+
+  async function deleteChannel(id) {
+    if (!confirm('Remove this channel?')) return;
+    try {
+      await apiFetch(`/api/channels/${id}`, { method: 'DELETE' });
+      showToast('Channel removed');
+      await loadChannels();
+    } catch(e) { showToast('Error removing channel'); }
+  }
+
+  async function downloadClip(id) {
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      const url = `${API_URL}/api/clips/${id}/download`;
+      const a = document.createElement('a');
+      a.href = url; a.download = `kleepa-clip-${id.slice(0,8)}.mp4`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      showToast('Download started');
+      setTimeout(loadClips, 1000);
+    } catch(e) { showToast('Download failed'); }
+  }
+
+  // ─────────────────────────────────────────
+  // UI HELPERS
+  // ─────────────────────────────────────────
   const TITLES = { dashboard:'Dashboard', clips:'Clips', channels:'Channels', activity:'Activity', settings:'Settings' };
   const NAV_INDEX = { dashboard:0, clips:1, channels:2, activity:3, settings:4 };
 
-  // ── NAVIGATION ──
   function navigate(page, btn) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     document.getElementById('page-' + page).classList.add('active');
     if (btn) btn.classList.add('active');
     document.getElementById('topbar-title').textContent = TITLES[page];
+    if (page === 'clips') loadClips();
+    if (page === 'channels') loadChannels();
+    if (page === 'activity') loadActivity();
   }
 
   function drawerNav(page, drawerBtn) {
@@ -851,110 +881,36 @@
     closeDrawer();
   }
 
-  // ── DRAWER ──
-  function openDrawer() {
-    document.getElementById('drawer-overlay').classList.add('open');
-    document.getElementById('mobile-drawer').classList.add('open');
-    document.body.style.overflow = 'hidden';
-  }
-  function closeDrawer() {
-    document.getElementById('drawer-overlay').classList.remove('open');
-    document.getElementById('mobile-drawer').classList.remove('open');
-    document.body.style.overflow = '';
-  }
+  function openDrawer() { document.getElementById('drawer-overlay').classList.add('open'); document.getElementById('mobile-drawer').classList.add('open'); document.body.style.overflow = 'hidden'; }
+  function closeDrawer() { document.getElementById('drawer-overlay').classList.remove('open'); document.getElementById('mobile-drawer').classList.remove('open'); document.body.style.overflow = ''; }
 
-  // ── MODAL ──
-  function openAddChannel() {
-    document.getElementById('add-channel-modal').classList.add('open');
-    setTimeout(() => document.getElementById('modal-url-input').focus(), 60);
-  }
-  function closeAddChannel() {
-    document.getElementById('add-channel-modal').classList.remove('open');
-    document.getElementById('modal-url-input').value = '';
-    document.getElementById('modal-url-error').classList.remove('visible');
-  }
-  function submitChannel() {
-    const url = document.getElementById('modal-url-input').value.trim();
-    const error = document.getElementById('modal-url-error');
-    if (!url || !url.includes('youtube.com')) {
-      error.classList.add('visible');
-      return;
-    }
-    error.classList.remove('visible');
-    closeAddChannel();
-    // In production: POST /api/channels with the URL
-  }
+  function openAddChannel() { document.getElementById('add-channel-modal').classList.add('open'); setTimeout(() => document.getElementById('modal-url-input').focus(), 60); }
+  function closeAddChannel() { document.getElementById('add-channel-modal').classList.remove('open'); document.getElementById('modal-url-input').value = ''; document.getElementById('modal-url-error').classList.remove('visible'); }
 
-  document.getElementById('add-channel-modal').addEventListener('click', function(e) {
-    if (e.target === this) closeAddChannel();
-  });
+  document.getElementById('add-channel-modal').addEventListener('click', e => { if (e.target === document.getElementById('add-channel-modal')) closeAddChannel(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeAddChannel(); closeDrawer(); } });
 
-  // ── AUTH ──
-  function showAuth(screen) {
-    document.querySelectorAll('.auth-screen').forEach(s => s.classList.remove('active'));
-    const el = document.getElementById('auth-' + screen);
-    if (el) el.classList.add('active');
-  }
-
-  function handleLogin() {
-    const email = document.getElementById('login-email').value.trim();
-    const password = document.getElementById('login-password').value;
-    const error = document.getElementById('login-error');
-    if (!email || !password) {
-      error.textContent = 'Please enter your email and password.';
-      error.classList.add('visible');
-      return;
-    }
-    error.classList.remove('visible');
-    // In production: supabase.auth.signInWithPassword({ email, password })
-    // For demo: close auth screens and show app
-    document.querySelectorAll('.auth-screen').forEach(s => s.classList.remove('active'));
-    const initial = email.charAt(0).toUpperCase();
-    document.getElementById('user-avatar').textContent = initial;
-  }
-
-  function handleSignup() {
-    const email = document.getElementById('signup-email').value.trim();
-    const password = document.getElementById('signup-password').value;
-    const confirm = document.getElementById('signup-confirm').value;
-    const error = document.getElementById('signup-error');
-    if (!email || !password) {
-      error.textContent = 'Please fill in all fields.';
-      error.classList.add('visible'); return;
-    }
-    if (password.length < 8) {
-      error.textContent = 'Password must be at least 8 characters.';
-      error.classList.add('visible'); return;
-    }
-    if (password !== confirm) {
-      error.textContent = "Passwords don't match.";
-      error.classList.add('visible'); return;
-    }
-    error.classList.remove('visible');
-    document.getElementById('confirm-email-display').textContent = email;
-    // In production: supabase.auth.signUp({ email, password })
-    showAuth('check-email');
-  }
-
-  // ── TOGGLE KNOB SYNC ──
-  document.querySelectorAll('.toggle').forEach(toggle => {
-    toggle.addEventListener('click', function() {
-      const knob = this.querySelector('.toggle-knob');
-      if (knob) knob.style.transform = this.classList.contains('on') ? 'translateX(19px)' : 'translateX(0)';
+  document.querySelectorAll('.toggle').forEach(t => {
+    t.addEventListener('click', function() {
+      const k = this.querySelector('.toggle-knob');
+      if (k) k.style.transform = this.classList.contains('on') ? 'translateX(19px)' : 'translateX(0)';
     });
   });
 
-  // ── KEYBOARD ──
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { closeAddChannel(); closeDrawer(); }
-  });
+  let toastTimer;
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.style.display = 'block';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.style.display = 'none'; }, 3000);
+  }
 
-  // ── DATE ──
-  document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('en-US', {
-    weekday: 'long', month: 'short', day: 'numeric'
-  });
+  document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('en-US', { weekday:'long', month:'short', day:'numeric' });
 
-  // ── SUPABASE REDIRECT (confirmed email) ──
+  // Auto-refresh clips every 30 seconds
+  setInterval(() => { if (currentUser) loadClips(); }, 30000);
+
+  // Handle Supabase email confirmation redirect
   if (window.location.hash.includes('type=signup') || window.location.search.includes('confirmed=true')) {
     showAuth('confirmed');
   }
